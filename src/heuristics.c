@@ -41,7 +41,7 @@ int heur_manhatt(int *brasl, t_desc *desc)
     return dist;
 }
 
-int heur_petryshyn(int *brasl, int n)
+int heur_petryshyn(int *brasl, int n) // needs to be implemented
 {
     // ind0 = val - 1
     // ind2 = i * n + j

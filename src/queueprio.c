@@ -60,155 +60,144 @@ void	enqueue(int *brasl, t_desc *desc, t_list *parent, t_set *set, int (*heur)(i
     prev->next = temp;
 }
 
-// void	enqueue_closed(t_list *list, t_set *set)
-// {
-// 	if (!set->front && !set->rear)
-// 	{
-//         list->prev = NULL;
-// 		set->front = list;
-// 		set->rear = list;
-// 		return;
-// 	}
-//     list->prev = set->rear;
-// 	set->rear->next = list;
-// 	set->rear = list;
-// }
+t_list *dequeue_first(t_set *set)
+{
+    t_list *ret;
+    ret = set->front;
+    if (ret && ret->next)
+        set->front = ret->next;
+    return ret;
+}
 
-// t_list	*dequeue(t_set *set) //ready
-// {
-// 	if (!set->front)
-// 		return NULL;
-// 	t_list *curr = set->front;
-//     curr->prev = NULL;
+void enqueue_closed(t_list *list, t_clos **clset, t_desc *desc)
+{
+    t_clos *clos = (t_clos *)malloc(sizeof(t_clos));
+    if (!clos)
+        return;
 
-// 	if (set->front == set->rear)
-// 	{
-// 		set->front = NULL;
-// 		set->rear = NULL;
-//         return curr;
-// 	}
-// 	else
-//     {
-//         t_list *selected = curr;
-//         t_list *tmp;
-//         int fval = curr->fval;
-//         while (curr)
-//         {
-//             if (curr->fval < fval)
-//             {
-//                 fval = curr->fval;
-//                 selected = curr;
-//             }
-//             tmp = curr;
-//             curr = curr->next;
-//             if (curr)
-//                 curr->prev = tmp;
-//         }
-//         if (selected == set->front)
-//         {
-//             set->front = set->front->next;
-//         }
-//         else if (selected == set->rear)
-//         {
-//             set->rear = set->rear->prev;
-//         }
-//         else
-//         {
-//             t_list *prev = selected->prev;
-//             t_list *next = selected->next;
-//             prev->next = next;
-//             next->prev = prev;
-//         }
-//         return selected;
-//     }
-// }
+    clos->node  = list;
+    clos->next = NULL;
 
-// static void trade_nodes(int *brasl, int from, int to)
-// {
-//     int tmp = brasl[from];
-//     brasl[from] = brasl[to];
-//     brasl[to] = tmp;
-// }
+    int h = 0;
+    if (desc->h == MANHATTAN)
+        h = list->h;
+    else
+        h = heur_manhatt(list->brasl, desc);
 
-// static int braslets_is_equal(int *first, int *second, int n)
-// {
-//     for (int i = 0; i < n * n; i++)
-//     {
-//         if (first[i] != second[i])
-//             return 0;
-//     }
+    if (clset[h])
+    {
+        clos->next = clset[h];
+        clset[h] = clos;
+    }
+    else
+    {
+        clset[h] = clos;
+    }
+}
 
-//     return 1;
-// }
+static void trade_nodes(int *brasl, int from, int to)
+{
+    int tmp = brasl[from];
+    brasl[from] = brasl[to];
+    brasl[to] = tmp;
+}
 
-// static int brasl_already_inside(int *brasl, t_set *set, int n) // 0 if not inside
-// {
-//     t_list *tmp = set->front;
-//     while (tmp)
-//     {
-//         if (braslets_is_equal(brasl, tmp->brasl,  n))
-//             return 1;
-//         tmp = tmp->next;
-//     }
+static int braslets_is_equal(int *first, int *second, int n)
+{
+    for (int i = 0; i < n * n; i++)
+    {
+        if (first[i] != second[i])
+            return 0;
+    }
 
-//     return 0;
-// }
+    return 1;
+}
 
-// void add_if_nice(int *tmp_br, t_list *list, t_set *opened, t_set *closed, int (*heur)(int *, int))
-// {
-//     if (!brasl_already_inside(tmp_br, opened, list->n) && !brasl_already_inside(tmp_br, closed, list->n))
-//     {
-//         int *new_brasl = (int *)malloc(sizeof(int) * list->n * list->n);
-//         for (int i = 0; i < list->n * list->n; i++)
-//             new_brasl[i] = tmp_br[i];
-//         enqueue(new_brasl, list->n, list, opened, heur);
-//     }
-// }
+static int brasl_already_inside_open(int *brasl, t_set *set, t_desc *desc) // 0 if not inside
+{
+    t_list *tmp = set->front;
+    while (tmp)
+    {
+        if (desc->heur(brasl, desc) == tmp->h)
+        {
+            if (braslets_is_equal(brasl, tmp->brasl, desc->n))
+                return 1;
+        }
+        tmp = tmp->next;
+    }
 
-// void copy_brasl(int *to, int *from, int nxn)
-// {
-//     for (int i = 0; i < nxn; i++)
-//         to[i] = from[i];
-// }
+    return 0;
+}
 
-// void expand_state(t_list *list, t_set *opened, t_set *closed, int (*heur)(int *, int))
-// {
-//     int nxn = list->n * list->n;
-//     int npos = 0; // index of null node
-//     for (int i = 0; i < nxn; i++)
-//     {
-//         if (list->brasl[i] == nxn)
-//             npos = i;
-//     }
-//     // printf("%d\n", npos);
+static int brasl_already_inside_closed(int *brasl, t_clos **clos, t_desc *desc) // 0 if not inside
+{
+    int ind = heur_manhatt(brasl, desc);
+    t_clos *tmp = clos[ind];
+    while (tmp)
+    {
+        if (braslets_is_equal(tmp->node->brasl, brasl, desc->n))
+            return 1;
+        tmp = tmp->next;
+    }
 
-//     int tmp_br[nxn];
-//     memset(tmp_br, 0, nxn * sizeof(int));
-//     copy_brasl(tmp_br, list->brasl, nxn);
-//     if (npos + list->n < nxn)
-//     {
-//         trade_nodes(tmp_br, npos, npos + list->n);
-//         add_if_nice(tmp_br, list, opened, closed, heur);
-//     }
+    return 0;
+}
 
-//     copy_brasl(tmp_br, list->brasl, nxn);
-//     if (npos - list->n >= 0)
-//     {
-//         trade_nodes(tmp_br, npos, npos - list->n);
-//         add_if_nice(tmp_br, list, opened, closed, heur);
-//     }
+static void add_if_nice(int *tmp_br, t_list *list, t_set *opened, t_clos **closed, t_desc *desc, int (*heur)(int *, int))
+{
+    if (!brasl_already_inside_open(tmp_br, opened, desc) &&
+        !brasl_already_inside_clos(tmp_br, closed, desc->n))
+    {
+        int *new_brasl = (int *)malloc(sizeof(int) * desc->n * desc->n);
+        for (int i = 0; i < desc->n * desc->n; i++)
+            new_brasl[i] = tmp_br[i];
+        enqueue(new_brasl, desc, list, opened, heur);
+    }
+}
 
-//     copy_brasl(tmp_br, list->brasl, nxn);
-//     if ((npos + 1) % list->n)
-//     {
-//         trade_nodes(tmp_br, npos, npos + 1);
-//         add_if_nice(tmp_br, list, opened, closed, heur);
-//     }
+static void copy_brasl(int *to, int *from, int nxn)
+{
+    for (int i = 0; i < nxn; i++)
+        to[i] = from[i];
+}
 
-//     copy_brasl(tmp_br, list->brasl, nxn);
-//     if (npos % list->n)
-//     {
-//         trade_nodes(tmp_br, npos, npos - 1);
-//         add_if_nice(tmp_br, list, opened, closed, heur);
-//     }
-// }
+void expand_state(t_list *list, t_set *opened, t_clos **closed, t_desc *desc, int (*heur)(int *, int))
+{
+    int nxn = desc->n * desc->n;
+    int npos = 0; // index of null node
+    for (int i = 0; i < nxn; i++)
+    {
+        if (list->brasl[i] == nxn)
+            npos = i;
+    }
+
+    int tmp_br[nxn];
+    memset(tmp_br, 0, nxn * sizeof(int));
+    copy_brasl(tmp_br, list->brasl, nxn);
+    if (npos + desc->n < nxn)
+    {
+        trade_nodes(tmp_br, npos, npos + desc->n);
+        add_if_nice(tmp_br, list, opened, closed, desc, heur);
+    }
+
+    copy_brasl(tmp_br, list->brasl, nxn);
+    if (npos - desc->n >= 0)
+    {
+        trade_nodes(tmp_br, npos, npos - desc->n);
+        add_if_nice(tmp_br, list, opened, closed, desc, heur);
+    }
+
+    copy_brasl(tmp_br, list->brasl, nxn);
+    if ((npos + 1) % desc->n)
+    {
+        trade_nodes(tmp_br, npos, npos + 1);
+        add_if_nice(tmp_br, list, opened, closed, desc, heur);
+    }
+
+    copy_brasl(tmp_br, list->brasl, nxn);
+    if (npos % desc->n)
+    {
+        trade_nodes(tmp_br, npos, npos - 1);
+        add_if_nice(tmp_br, list, opened, closed, desc, heur);
+    }
+}

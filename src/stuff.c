@@ -29,6 +29,20 @@ void print_listway(t_list *list, int n)
     printf("------\n");
 }
 
+void set_closed_null(t_clos **closed, int hwc)
+{
+    for (int i = 0; i < hwc; i++)
+        closed[i] = NULL;
+}
+
+int count_worst_case(int n)
+{
+    int count = 0;
+    for (; n >= 2; n -= 2)
+        count += 4 * n * (n - 1);
+    return count;
+}
+
 // void print_pass(t_list *list)
 // {
 //     while (list)
