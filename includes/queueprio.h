@@ -5,14 +5,16 @@ typedef enum e_heur
 {
 	HAMMING,
 	MANHATTAN,
+	EUCLIDEAN,
 	PETRYSHYN
 } heur;
 
 typedef struct s_desc
 {
 	int	n;
-	heur h; // heuristic type (HAMMING/MANHATTAN/PETRYSHYN)
 	int	hwc; // heuristic worst case
+	int tcompl; // complexity in time
+	int scompl; // complexity in size
 	int	*sol;
 	int (*heur)(int *, struct s_desc *desc);
 } t_desc;
@@ -38,10 +40,10 @@ typedef	struct s_set
 	t_list	*front;
 } t_set;
 
-void	    enqueue(int *brasl, t_desc *desc, t_list *parent, t_set *set, int (*heur)(int *, t_desc *desc));
-void		expand_state(t_list *list, t_set *opened, t_clos **closed, t_desc *desc, int (*heur)(int *, int));
-t_list *dequeue_first(t_set *set);
-void enqueue_closed(t_list *list, t_clos **clset, t_desc *desc);
+void	enqueue(int *brasl, t_desc *desc, t_list *parent, t_set *set);
+void	expand_state(t_list *list, t_set *opened, t_clos **closed, t_desc *desc);
+void	enqueue_closed(t_list *list, t_clos **clset, t_desc *desc);
+t_list	*dequeue_first(t_set *set);
 
 
 #endif

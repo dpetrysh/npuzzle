@@ -9,7 +9,7 @@ VPATH := src includes
 all: $(NAME)
 
 $(NAME): $(SRO) $(SRH)
-	$(CC) $(SRO) -o $(NAME)
+	$(CC) $(SRO) -o $(NAME) -lm
 
 %.o : %.c
 	$(CC) -g -c -I ./includes/ $<

@@ -2,6 +2,12 @@
 
 void *custom_error(char *str)
 {
-    perror(str);
+    printf("%s\n", str);
     return NULL;
+}
+
+int int_cust_error(char *str)
+{
+    printf("%s\n", str);
+    return 0;
 }
